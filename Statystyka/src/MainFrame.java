@@ -3,16 +3,18 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Obsługa interfejsu graficznego aplikacji oraz jego przycisków.
+ */
 public class MainFrame {
     private JFrame frame;
     private static final String DIR_PATH = "files";
-    private Path plikWzorcowy = null;  // Ścieżka do pliku wzorcowego
+    private Path sciezkaDoPlikuWzorcowego = null;
     private final int liczbaWyrazowStatystyki = 10;
     private final int liczbaProducentow = 1;
     private final int liczbaKonsumentow = 2;
@@ -36,6 +38,9 @@ public class MainFrame {
         initialize();
     }
 
+    /**
+     * Inicjalizacja interfejsu graficznego.
+     */
     private void initialize() {
         frame = new JFrame("Analiza tekstu");
         frame.setSize(450, 70);
@@ -69,11 +74,14 @@ public class MainFrame {
         frame.add(panel, BorderLayout.NORTH);
     }
 
+    /**
+     * Obsługa wyboru pliku wzorcowego do obliczenia miary podobieństwa tekstu.
+     */
     private void wybierzPlikWzorcowy() {
         JFileChooser fileChooser = new JFileChooser();
         if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-            plikWzorcowy = fileChooser.getSelectedFile().toPath();
-            JOptionPane.showMessageDialog(frame, "Wybrano plik wzorcowy: " + plikWzorcowy);
+            sciezkaDoPlikuWzorcowego = fileChooser.getSelectedFile().toPath();
+            JOptionPane.showMessageDialog(frame, "Wybrano plik wzorcowy: " + sciezkaDoPlikuWzorcowego);
         }
     }
 
@@ -90,24 +98,24 @@ public class MainFrame {
         producentFuture.clear();
         konsumentFuture.clear();  // Czyścimy listę konsumentów przed ponownym uruchomieniem
 
-        // Uruchomienie PRODUCENTÓW
+        // uruchomienie PRODUCENTÓW
         for (int i = 0; i < liczbaProducentow; i++) {
             producentFuture.add(executor.submit(new Producent(DIR_PATH, kolejka, fajrant, liczbaKonsumentow)));
         }
 
-        // Uruchomienie KONSUMENTÓW
+        // uruchomienie KONSUMENTÓW
         for (int i = 0; i < liczbaKonsumentow; i++) {
-            konsumentFuture.add(executor.submit(new Konsument(kolejka, liczbaWyrazowStatystyki, plikWzorcowy)));
+            konsumentFuture.add(executor.submit(new Konsument(kolejka, liczbaWyrazowStatystyki, sciezkaDoPlikuWzorcowego)));
         }
     }
 
     private void stopProcessing() {
         fajrant.set(true);
 
-        // Zatrzymanie producentów
+        // zatrzymanie producentów
         producentFuture.forEach(f -> f.cancel(true));
 
-        // Wysłanie "poison pill" do każdego konsumenta
+        // wysłanie "poison pill" do każdego konsumenta
         for (int i = 0; i < liczbaKonsumentow; i++) {
             try {
                 kolejka.put(Optional.empty());
@@ -116,9 +124,9 @@ public class MainFrame {
             }
         }
 
-        // Zatrzymanie konsumentów
+        // zatrzymanie konsumentów
         konsumentFuture.forEach(f -> f.cancel(true));
 
-        plikWzorcowy = null;
+        sciezkaDoPlikuWzorcowego = null;
     }
 }

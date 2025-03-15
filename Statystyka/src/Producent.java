@@ -48,7 +48,6 @@ public class Producent implements Runnable {
                         return FileVisitResult.CONTINUE;
                     }
                 });
-
                 Thread.sleep(60000);
             }
         } catch (IOException | InterruptedException e) {
